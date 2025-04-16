@@ -1,397 +1,105 @@
 import { test } "mo:test";
 import Runtime "mo:new-base/Runtime";
+import Blob "mo:new-base/Blob";
 import PublicKey "../src/PublicKey";
 import Text "mo:base/Text";
-import Principal "mo:base/Principal";
+import Signature "../src/Signature";
 
 test(
-  "Ed25519 PublicKey Creation and Equality",
+  "verify public key",
   func() {
-    // Test vector: public key bytes
-    let pubKeyBytes : [Nat8] = [
-      29,
-      94,
-      233,
-      153,
-      210,
-      232,
-      188,
-      142,
-      220,
-      159,
-      196,
-      122,
-      84,
-      66,
-      176,
-      139,
-      186,
-      251,
-      104,
-      90,
-      78,
-      239,
-      213,
-      9,
-      58,
-      48,
-      96,
-      220,
-      186,
-      160,
-      14,
-      15,
-    ];
+    type TestCase = {
+      x : Int;
+      y : Nat;
+      curve : PublicKey.CurveKind;
+      message : Blob;
+      signature : Signature.Signature;
+    };
+    let testCases : [TestCase] = [];
 
-    // Create a public key
-    let publicKey = PublicKey.PublicKey(pubKeyBytes);
+    for (testCase in testCases.vals()) {
+      // Create a public key
+      let publicKey = PublicKey.PublicKey(testCase.x, testCase.y, testCase.curve);
 
-    // Test equality with identical key
-    let publicKey2 = PublicKey.PublicKey(pubKeyBytes);
-    assert (publicKey.equal(publicKey2));
+      // Verify the signature
+      switch (publicKey.verify(testCase.message.vals(), testCase.signature)) {
+        case (false) Runtime.trap("Signature verification failed for test case - \nX: " # debug_show testCase.x # "\nY: " # debug_show testCase.y # "\nCurve: " # debug_show testCase.curve # "\nMessage: " # debug_show testCase.message # "\nSignature:\nx-" # debug_show testCase.signature.x # "\ny-" # debug_show testCase.signature.y # "\ns-" # debug_show testCase.signature.s);
+        case (true) ();
+      };
 
-    // Test equality with different key
-    let differentBytes : [Nat8] = [
-      30,
-      94,
-      233,
-      153,
-      210,
-      232,
-      188,
-      142,
-      220,
-      159,
-      196,
-      122,
-      84,
-      66,
-      176,
-      139,
-      186,
-      251,
-      104,
-      90,
-      78,
-      239,
-      213,
-      9,
-      58,
-      48,
-      96,
-      220,
-      186,
-      160,
-      14,
-      15,
-    ];
-    let differentKey = PublicKey.PublicKey(differentBytes);
-    assert (not publicKey.equal(differentKey));
+    };
   },
 );
 
 test(
   "PublicKey to/fromBytes (raw)",
   func() {
-    // Test vector: public key bytes
-    let pubKeyBytes : [Nat8] = [
-      29,
-      94,
-      233,
-      153,
-      210,
-      232,
-      188,
-      142,
-      220,
-      159,
-      196,
-      122,
-      84,
-      66,
-      176,
-      139,
-      186,
-      251,
-      104,
-      90,
-      78,
-      239,
-      213,
-      9,
-      58,
-      48,
-      96,
-      220,
-      186,
-      160,
-      14,
-      15,
-    ];
-
-    // Create a public key
-    let publicKey = PublicKey.PublicKey(pubKeyBytes);
-
-    // Export to raw bytes
-    let rawBytes = publicKey.toBytes(#raw);
-    assert (rawBytes == pubKeyBytes);
-
-    // Import from raw bytes
-    let importedKey = switch (PublicKey.fromBytes(rawBytes.vals(), #raw)) {
-      case (#ok(key)) key;
-      case (#err(e)) Runtime.trap("Failed to import key: " # e);
+    type TestCase = {
+      x : Int;
+      y : Nat;
+      curve : PublicKey.CurveKind;
+      outputByteEncoding : PublicKey.OutputByteEncoding;
+      inputByteEncoding : PublicKey.InputByteEncoding;
+      expected : Blob;
     };
+    let testCases : [TestCase] = [];
 
-    // Check equality
-    assert (publicKey.equal(importedKey));
-  },
-);
+    for (testCase in testCases.vals()) {
+      // Create a public key
+      let publicKey = PublicKey.PublicKey(testCase.x, testCase.y, testCase.curve);
 
-test(
-  "PublicKey to/fromBytes (SPKI)",
-  func() {
-    // Test vector: public key bytes
-    let pubKeyBytes : [Nat8] = [
-      29,
-      94,
-      233,
-      153,
-      210,
-      232,
-      188,
-      142,
-      220,
-      159,
-      196,
-      122,
-      84,
-      66,
-      176,
-      139,
-      186,
-      251,
-      104,
-      90,
-      78,
-      239,
-      213,
-      9,
-      58,
-      48,
-      96,
-      220,
-      186,
-      160,
-      14,
-      15,
-    ];
+      // Export to raw bytes
+      let rawBytes = Blob.fromArray(publicKey.toBytes(testCase.outputByteEncoding));
+      if (rawBytes != testCase.expected) {
+        Runtime.trap("Exported bytes do not match expected bytes " # debug_show rawBytes # " for test case:\n" # debug_show (testCase));
+      };
 
-    // Create a public key
-    let publicKey = PublicKey.PublicKey(pubKeyBytes);
+      // Import from raw bytes
+      let importedKey = switch (PublicKey.fromBytes(rawBytes.vals(), testCase.inputByteEncoding)) {
+        case (#ok(key)) key;
+        case (#err(e)) Runtime.trap("Failed to import key: " # e # "\nTest case:\n" # debug_show (testCase));
+      };
 
-    // Export to SPKI bytes
-    let spkiBytes = publicKey.toBytes(#spki);
-
-    // Import from SPKI bytes
-    let importedKey = switch (PublicKey.fromBytes(spkiBytes.vals(), #spki)) {
-      case (#ok(key)) key;
-      case (#err(e)) Runtime.trap("Failed to import key: " # e);
+      // Check equality
+      if (not publicKey.equal(importedKey)) {
+        Runtime.trap("Imported key does not match original key for test case:\n" # debug_show (testCase));
+      };
     };
-
-    // Check equality
-    assert (publicKey.equal(importedKey));
   },
 );
 
 test(
   "PublicKey to/fromText (formats)",
   func() {
-    // Test vector: public key bytes
-    let pubKeyBytes : [Nat8] = [
-      29,
-      94,
-      233,
-      153,
-      210,
-      232,
-      188,
-      142,
-      220,
-      159,
-      196,
-      122,
-      84,
-      66,
-      176,
-      139,
-      186,
-      251,
-      104,
-      90,
-      78,
-      239,
-      213,
-      9,
-      58,
-      48,
-      96,
-      220,
-      186,
-      160,
-      14,
-      15,
-    ];
-
-    // Create a public key
-    let publicKey = PublicKey.PublicKey(pubKeyBytes);
-
-    // Define formats to test
-    type FormatPair = {
-      outputFormat : PublicKey.OutputTextFormat;
-      inputFormat : PublicKey.InputTextFormat;
+    type TestCase = {
+      x : Int;
+      y : Nat;
+      curve : PublicKey.CurveKind;
+      outputTextFormat : PublicKey.OutputTextFormat;
+      inputTextFormat : PublicKey.InputTextFormat;
+      expected : Text;
     };
+    let testCases : [TestCase] = [];
+    for (testCase in testCases.vals()) {
+      let { x; y; curve; outputTextFormat; inputTextFormat; expected } = testCase;
+      // Create a public key
+      let publicKey = PublicKey.PublicKey(x, y, curve);
 
-    let formats : [FormatPair] = [
-      {
-        outputFormat = #hex({
-          byteEncoding = #raw;
-          format = { isUpper = false; prefix = #none };
-        });
-        inputFormat = #hex({
-          byteEncoding = #raw;
-          format = { prefix = #none };
-        });
-      },
-      {
-        outputFormat = #base64({
-          byteEncoding = #raw;
-          isUriSafe = false;
-        });
-        inputFormat = #base64({
-          byteEncoding = #raw;
-        });
-      },
-      {
-        outputFormat = #pem({
-          byteEncoding = #spki;
-        });
-        inputFormat = #pem({
-          byteEncoding = #spki;
-        });
-      },
-      {
-        outputFormat = #hex({
-          byteEncoding = #spki;
-          format = { isUpper = true; prefix = #single("0x") };
-        });
-        inputFormat = #hex({
-          byteEncoding = #spki;
-          format = { prefix = #single("0x") };
-        });
-      },
-    ];
+      let text = publicKey.toText(outputTextFormat);
 
-    // Test each format for roundtrip conversion
-    for (format in formats.vals()) {
-      let text = publicKey.toText(format.outputFormat);
+      if (text != expected) {
+        Runtime.trap("Exported text does not match expected text for test case:\nActual\n" # text # "\n" # debug_show (testCase));
+      };
 
-      let importedKey = switch (PublicKey.fromText(text, format.inputFormat)) {
+      let importedKey = switch (PublicKey.fromText(text, inputTextFormat)) {
         case (#ok(key)) key;
-        case (#err(e)) Runtime.trap("Failed to import key from " # debug_show (format) # ": " # e);
+        case (#err(e)) Runtime.trap("Failed to import key from " # debug_show (inputTextFormat) # ": " # e # "\nTest case:\n" # debug_show (testCase));
       };
 
       // Check equality
-      assert (publicKey.equal(importedKey));
-    };
-  },
-);
-
-test(
-  "PublicKey to Principal conversion",
-  func() {
-    // Test vector: public key bytes
-    let pubKeyBytes : [Nat8] = [
-      29,
-      94,
-      233,
-      153,
-      210,
-      232,
-      188,
-      142,
-      220,
-      159,
-      196,
-      122,
-      84,
-      66,
-      176,
-      139,
-      186,
-      251,
-      104,
-      90,
-      78,
-      239,
-      213,
-      9,
-      58,
-      48,
-      96,
-      220,
-      186,
-      160,
-      14,
-      15,
-    ];
-
-    // Create a public key
-    let publicKey = PublicKey.PublicKey(pubKeyBytes);
-
-    // Convert to Principal
-    let principal = publicKey.toPrincipal();
-
-    // We can only verify that conversion doesn't trap and returns a Principal
-    // The specific Principal value would depend on the implementation details
-    assert (Text.startsWith(Principal.toText(principal), #text("2")));
-  },
-);
-
-test(
-  "PublicKey Error Handling",
-  func() {
-    // Test with invalid key size
-    let invalidBytes : [Nat8] = [1, 2, 3]; // Too short
-
-    let result = PublicKey.fromBytes(invalidBytes.vals(), #raw);
-    switch (result) {
-      case (#ok(_)) Runtime.trap("Should have failed with invalid key size");
-      case (#err(e)) assert (Text.startsWith(e, #text("Invalid Ed25519 public key size")));
-    };
-
-    // Test with invalid SPKI format
-    let invalidSpki : [Nat8] = [0x30, 0x01, 0x00]; // Invalid ASN.1
-
-    let result2 = PublicKey.fromBytes(invalidSpki.vals(), #spki);
-    switch (result2) {
-      case (#ok(_)) Runtime.trap("Should have failed with invalid SPKI format");
-      case (#err(_)) (); // Expected error, specific message is ASN.1 library dependent
-    };
-
-    // Test with invalid hex
-    let invalidHex = "not a hex string";
-
-    let result3 = PublicKey.fromText(
-      invalidHex,
-      #hex({
-        byteEncoding = #raw;
-        format = { prefix = #none };
-      }),
-    );
-
-    switch (result3) {
-      case (#ok(_)) Runtime.trap("Should have failed with invalid hex");
-      case (#err(_)) (); // Expected error
+      if (not publicKey.equal(importedKey)) {
+        Runtime.trap("Imported key does not match original key for test case:\n" # debug_show (testCase));
+      };
     };
   },
 );

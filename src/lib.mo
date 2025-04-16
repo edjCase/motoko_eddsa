@@ -2,7 +2,6 @@ import PublicKeyModule "./PublicKey";
 import SignatureModule "./Signature";
 import Iter "mo:base/Iter";
 import Result "mo:base/Result";
-import Principal "mo:base/Principal";
 
 module {
     public type PublicKey = PublicKeyModule.PublicKey;
@@ -10,8 +9,10 @@ module {
 
     // Create a public key from raw bytes
     public func PublicKey(
-        bytes : [Nat8]
-    ) : PublicKey = PublicKeyModule.PublicKey(bytes);
+        x : Int,
+        y : Nat,
+        curveKind : PublicKeyModule.CurveKind,
+    ) : PublicKey = PublicKeyModule.PublicKey(x, y, curveKind);
 
     // Import public key from bytes
     public func publicKeyFromBytes(
@@ -25,15 +26,12 @@ module {
         encoding : PublicKeyModule.InputTextFormat,
     ) : Result.Result<PublicKey, Text> = PublicKeyModule.fromText(text, encoding);
 
-    // Convert a public key to a Principal
-    public func publicKeyToPrincipal(
-        publicKey : PublicKey
-    ) : Principal = publicKey.toPrincipal();
-
     // Create a signature from raw bytes
     public func Signature(
-        bytes : [Nat8]
-    ) : Signature = SignatureModule.Signature(bytes);
+        x : Int,
+        y : Nat,
+        s : Nat,
+    ) : Signature = SignatureModule.Signature(x, y, s);
 
     // Import signature from bytes
     public func signatureFromBytes(
