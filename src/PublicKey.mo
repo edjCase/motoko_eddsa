@@ -103,8 +103,8 @@ module {
                             let buffer = Buffer.Buffer<Nat8>(32);
                             NatX.encodeNat32(buffer, Nat32.fromNat(y), #msb);
 
-                            if (x < 0) {
-                                // Set the high bit if x is negative
+                            if (x % 2 == 1) {
+                                // Set the high bit if x is negative (odd)
                                 buffer.put(0, buffer.get(0) | 0x80);
                             };
 

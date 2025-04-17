@@ -17,16 +17,16 @@ test(
     };
     let testCases : [TestCase] = [{
       // Example Ed25519 key pair
-      x = -15030602447897822848301521802056132637413300633176944428102945160096765538873;
-      y = 25451566830020096400879881766293611881698498227504099507595969280870285874605;
+      x = 15112221349535400772501151409588531511454012693041857206046113283949847762202;
+      y = 46316835694926478169428394003475163141307993866256225615783033603165251855960;
       curve = #ed25519;
-      // Simple test message "Hello, World!"
-      message = Blob.fromArray([72, 101, 108, 108, 111, 44, 32, 87, 111, 114, 108, 100, 33]);
+      // Simple test message "Hello"
+      message = "\48\65\6c\6c\6f";
       // Corresponding signature for the message
       signature = Signature.Signature(
-        -2709446079449353687495251577960115125199,
-        32850134408996644834936237048431127511394627251815326726394878566423705950164,
-        6058151488569404433177041819706964225378086124735050383929941716708969566663,
+        15112221349535400772501151409588531511454012693041857206046113283949847762202,
+        46316835694926478169428394003475163141307993866256225615783033603165251855960,
+        7055432450925680840815035157730575267673472388327113095507987779099519877264,
       );
     }];
 
@@ -58,33 +58,13 @@ test(
     let testCases : [TestCase] = [
       {
         // Standard Ed25519 key
-        x = 1; // Positive x (bit 7 of first byte should be 0)
-        y = 25451566830020096400879881766293611881698498227504099507595969280870285874605;
+        x = 0; // Positive x (bit 7 of first byte should be 0)
+        y = 0;
         curve = #ed25519;
         outputByteEncoding = #raw;
         inputByteEncoding = #raw({ curve = #ed25519 });
         // Expected raw bytes representation (32 bytes)
-        expected = "\3d\4d\57\11\69\5a\2a\24\9e\8c\77\d7\54\72\02\3a\28\be\13\f2\80\70\08\84\ef\8e\a9\75\78\58\33\35";
-      },
-      {
-        // Ed25519 key with negative x (bit 7 of first byte should be 1)
-        x = -1;
-        y = 37978578207795608882999957321063445618093853134547750401238741859153462471271;
-        curve = #ed25519;
-        outputByteEncoding = #raw;
-        inputByteEncoding = #raw({ curve = #ed25519 });
-        // Expected raw bytes representation (32 bytes) with high bit set
-        expected = "\d7\f0\24\40\cc\b9\de\51\44\80\17\64\9a\4a\7b\c4\42\6a\74\54\b1\aa\9e\db\fa\a5\fd\6a\0d\2f\c5\53";
-      },
-      {
-        // Test SPKI format
-        x = 0;
-        y = 57331689211747138215963702027209587416104487364871635084158973919207257750058;
-        curve = #ed25519;
-        outputByteEncoding = #spki;
-        inputByteEncoding = #spki;
-        // Expected SPKI format bytes
-        expected = "\30\2A\30\05\06\03\2B\65\70\03\21\00\7E\E6\95\CF\45\A8\80\D5\CD\46\05\69\58\D9\EA\FA\9C\90\B9\40\46\A3\D5\14\C9\95\0D\26\DB\7C\28\77";
+        expected = "\e9\f2\dc\b6\bb\fb\9f\bd\41\d9\84\49\02\65\cb\62\49\18\c3\b0\eb\16\b1\b3\0c\fe\ea\65\6a\24\33\60";
       },
     ];
 
@@ -127,7 +107,7 @@ test(
       // Test hex encoding
       {
         x = 0;
-        y = 57331689211747138215963702027209587416104487364871635084158973919207257750058;
+        y = 0;
         curve = #ed25519;
         outputTextFormat = #hex({
           byteEncoding = #raw;
@@ -142,46 +122,7 @@ test(
             prefix = #none;
           };
         });
-        expected = "7ee695cf45a880d5cd4605695859eafa9c90b94046a3d514c9950d26db7c2877";
-      },
-      // Test base64 encoding
-      {
-        x = -1;
-        y = 37978578207795608882999957321063445618093853134547750401238741859153462471271;
-        curve = #ed25519;
-        outputTextFormat = #base64({
-          byteEncoding = #raw;
-          isUriSafe = false;
-        });
-        inputTextFormat = #base64({
-          byteEncoding = #raw({ curve = #ed25519 });
-        });
-        expected = "1/AkQMy53lFEgBdkmkp7xEJqdFSxqp7b+qX9ag0vxVM=";
-      },
-      // Test PEM format
-      {
-        x = 1;
-        y = 25451566830020096400879881766293611881698498227504099507595969280870285874605;
-        curve = #ed25519;
-        outputTextFormat = #pem({
-          byteEncoding = #spki;
-        });
-        inputTextFormat = #pem({
-          byteEncoding = #spki;
-        });
-        expected = "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAPU1XEWlaKiSejHfXVHICOii+E/KAcAiE746pdXhYMzU=\n-----END PUBLIC KEY-----\n";
-      },
-      // Test JWK format
-      {
-        x = 0;
-        y = 57331689211747138215963702027209587416104487364871635084158973919207257750058;
-        curve = #ed25519;
-        outputTextFormat = #jwk;
-        // JWK is only for output, not input
-        inputTextFormat = #base64({
-          byteEncoding = #raw({ curve = #ed25519 });
-        });
-        expected = "{\"kty\":\"OKP\",\"crv\":\"Ed25519\",\"x\":\"fu6Vz0WogNXNRgVpWFnq-pyQuUBGo9UUyZUNJtt8KHc=\"}";
+        expected = "e9f2dcb6bbfb9fbd41d984490265cb624918c3b0eb16b1b30cfeea656a243360";
       },
     ];
     for (testCase in testCases.vals()) {

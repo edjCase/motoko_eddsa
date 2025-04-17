@@ -6,6 +6,9 @@ import Result "mo:base/Result";
 import BaseX "mo:base-x-encoder";
 import NatX "mo:xtended-numbers/NatX";
 import Int "mo:new-base/Int";
+import Debug "mo:new-base/Debug";
+import Runtime "mo:new-base/Runtime";
+import Blob "mo:new-base/Blob";
 import IterTools "mo:itertools/Iter";
 
 module {
@@ -68,12 +71,25 @@ module {
                     let buffer = Buffer.Buffer<Nat8>(64);
                     // y
                     NatX.encodeNat(buffer, y, #lsb);
-                    if (x < 0) {
-                        // Set the sign bit for negative x
-                        buffer.put(31, buffer.get(31) | 0x80);
+                    Debug.print("Buffer after y: " # debug_show (Blob.fromArray(Buffer.toArray(buffer))));
+                    while (buffer.size() < 32) {
+                        buffer.add(0); // Pad with zeros
                     };
+                    Debug.print("Buffer after y and padding: " # debug_show (Blob.fromArray(Buffer.toArray(buffer))));
+                    let final_byte_31 : Nat8 = if (x % 2 == 1) {
+                        // Odd x: SET the MSB
+                        buffer.get(31) | 0x80;
+                    } else {
+                        // Even x: CLEAR the MSB
+                        buffer.get(31) & 0x7F;
+                    };
+                    buffer.put(31, final_byte_31);
+                    Debug.print("Buffer after x MSB: " # debug_show (Blob.fromArray(Buffer.toArray(buffer))));
                     // s
                     NatX.encodeNat(buffer, s, #lsb);
+                    while (buffer.size() < 64) {
+                        buffer.add(0); // Pad with zeros
+                    };
                     Buffer.toArray(buffer);
 
                 };
@@ -108,7 +124,7 @@ module {
                     rBytes.put(31, rBytes.get(31) & 0x7F);
                 };
                 let ?y = NatX.decodeNat(rBytes.vals(), #lsb) else return #err("Invalid signature bytes, unable to decode R");
-                let x : Int = if (isXNegative) -recoverXFromY(y, curve) else recoverXFromY(y, curve);
+                let x : Int = recoverXFromY(y, curve, isXNegative);
                 let ?s = NatX.decodeNat(bytes, #lsb) else return #err("Invalid signature bytes, unable to decode s");
 
                 #ok(Signature(x, y, s));
@@ -147,173 +163,170 @@ module {
             };
         };
     };
+    public func recoverXFromY(y : Nat, curveKind : CurveKind, isXNegative : Bool) : Nat {
 
-    private func recoverXFromY(y : Nat, curveKind : CurveKind) : Int {
         switch (curveKind) {
             case (#ed25519) {
-                let ED25519_PRIME : Nat = 2 ** 255 - 19;
-                let ED25519_D_NUM : Int = -121665;
-                let ED25519_D_DEN : Nat = 121666;
+                // Ed25519 constants
+                // p = 2^255 - 19
+                let p : Nat = Nat.pow(2, 255) - 19;
 
-                // Compute y²
-                let y_squared = (y * y) % ED25519_PRIME;
+                // d = -121665 / 121666 mod p
+                // d = -121665 * modInv(121666, p) mod p
+                let d_num : Nat = 121665;
+                let d_den : Nat = 121666;
 
-                // Compute numerator: (y² - 1) % p
-                let num : Nat = if (y_squared > 1) {
-                    y_squared - 1;
-                } else {
-                    // Handle underflow in modular arithmetic
-                    ED25519_PRIME - (1 - y_squared);
+                // Calculate modular inverse of d_den using our implemented utility
+                let d_den_inv = NatUtils.modInv(d_den, p);
+
+                // Calculate d = (-d_num * d_den_inv) mod p
+                var d_term1 : Nat = p - d_num;
+                // Add debug prints for operands of d calculation
+                var d : Nat = Nat.mul(d_term1, d_den_inv) % p;
+
+                // Calculate y^2 mod p
+                let y_squared = NatUtils.modPow(y, 2, p);
+
+                // Calculate Numerator: (y^2 - 1) mod p
+                let numerator = (y_squared + p - 1) % p;
+
+                // Calculate Denominator: (1 + d * y^2) mod p
+                let dy_squared = Nat.mul(d, y_squared) % p;
+                let denominator = (1 + dy_squared) % p;
+
+                // Check if denominator is zero
+                if (Nat.equal(denominator, 0)) {
+                    Runtime.trap("Denominator is zero in Ed25519 point recovery.");
                 };
 
-                // Compute d*y² in the field
-                // For Ed25519, we need to compute -121665/121666 * y²
-                // This requires modular arithmetic with fractions
+                // Calculate modular inverse of the denominator
+                let denominator_inv = NatUtils.modInv(denominator, p);
 
-                // First compute d_num * y² (the negative value)
-                let d_num_y_squared = (Int.abs(ED25519_D_NUM) * y_squared) % ED25519_PRIME;
+                // Add debug prints for operands of x_squared calculation
+                // Calculate x^2 = numerator * denominator_inv mod p
+                let x_squared = Nat.mul(numerator, denominator_inv) % p;
 
-                // Compute modular inverse of d_den
-                let d_den_inv = modInverse(ED25519_D_DEN, ED25519_PRIME);
+                // Calculate the modular square root of x_squared mod p
+                let exponent = (p + 3) / 8;
+                let x_root1 = NatUtils.modPow(x_squared, exponent, p);
 
-                // d*y² = (d_num * y² * d_den_inv) % p
-                let d_y_squared = (d_num_y_squared * d_den_inv) % ED25519_PRIME;
-
-                // For negative d, we need to negate in the field
-                let d_y_squared_signed : Int = ED25519_PRIME - d_y_squared;
-
-                // Compute denominator: (d*y² - 1) % p
-                let den : Nat = if (d_y_squared_signed > 1) {
-                    Int.abs(d_y_squared_signed - 1);
-                } else {
-                    ED25519_PRIME - Int.abs(1 - d_y_squared_signed);
+                // Verify the root: (x_root1^2) % p == x_squared
+                let x_root1_squared = NatUtils.modPow(x_root1, 2, p);
+                if (x_root1_squared != x_squared) {
+                    Runtime.trap("Invalid y-coordinate or calculation error: cannot find square root for x^2.");
                 };
 
-                // Compute den_inv = 1/den in the field
-                let den_inv = modInverse(den, ED25519_PRIME);
+                // The two possible roots are x_root1 and (p - x_root1) mod p
+                let x_root2 = (p - x_root1) % p;
 
-                // Compute (num * den_inv) % p
-                let x_squared = (num * den_inv) % ED25519_PRIME;
+                // Determine the correct root based on the sign (LSB)
+                let is_root1_negative : Bool = (x_root1 % 2 == 1);
 
-                // Now we need to compute the square root in the field
-                sqrtModP(x_squared, ED25519_PRIME);
+                // Return the root that matches the requested sign
+                let final_x : Nat = if (isXNegative == is_root1_negative) {
+                    x_root1;
+                } else {
+                    assert ((x_root2 % 2 == 1) != is_root1_negative); // Check parity consistency (fixed #assert)
+                    x_root2;
+                };
+                return final_x;
             };
+            // Handle other curve kinds if they were defined
+            // case (...) { ... }
         };
+        // Should be unreachable if curveKind is restricted to #ed25519
+        Runtime.trap("Unsupported curve kind for recoverXFromY");
     };
 
-    private func modInverse(a : Nat, m : Nat) : Nat {
-        // Extended Euclidean Algorithm to find modular inverse
-        var t : Int = 0;
-        var newT : Int = 1;
-        var r : Nat = m;
-        var newR : Nat = a;
-        var quotient : Nat = 0;
-        var temp : Int = 0;
+    // ==================================================
+    // Nat utility functions for modular arithmetic
+    // ==================================================
+    module NatUtils {
 
-        while (newR != 0) {
-            quotient := r / newR;
+        /**
+     * Calculates (base ^ exponent) mod modulus efficiently.
+     */
+        public func modPow(base : Nat, exponent : Nat, modulus : Nat) : Nat {
+            // Debug.print("modPow(base=" # debug_show(base) # ", exp=" # debug_show(exponent) # ", mod=" # debug_show(modulus) # ")"); // Optional: uncomment if needed
+            if (Nat.equal(modulus, 0)) {
+                Runtime.trap("modPow: Modulus cannot be zero");
+            };
+            if (Nat.equal(modulus, 1)) { return 0 };
+            if (Nat.equal(exponent, 0)) { return 1 };
 
-            temp := newT;
-            newT := t - Int.fromNat(quotient) * newT;
-            t := temp;
+            var res : Nat = 1;
+            var b : Nat = base % modulus;
+            var exp : Nat = exponent;
 
-            temp := Int.fromNat(newR);
-            newR := r - quotient * newR;
-            r := Int.abs(temp);
+            while (exp > 0) {
+                if (exp % 2 == 1) {
+                    res := (res * b) % modulus;
+                };
+                b := (b * b) % modulus;
+                exp := exp / 2;
+            };
+            // Debug.print("modPow result: " # debug_show(res)); // Optional: uncomment if needed
+            return res;
         };
 
-        if (r > 1) {
-            // a is not invertible
-            return 0; // Error case
-        };
+        /**
+     * Calculates the modular multiplicative inverse of a modulo m.
+     * Includes debug prints.
+     */
+        public func modInv(a : Nat, m : Nat) : Nat {
+            if (m <= 1) { Runtime.trap("modInv: Modulus must be > 1") };
 
-        if (t < 0) {
-            t := t + Int.fromNat(m);
-        };
-
-        return Int.abs(t);
-    };
-    private func sqrtModP(n : Nat, p : Nat) : Nat {
-        // Edge cases
-        if (n == 0) return 0;
-        if (p == 2) return n % 2;
-
-        // Check that n is a quadratic residue using Euler's criterion
-        if (modPow(n, (p - 1) / 2, p) != 1) {
-            // Not a quadratic residue
-            return 0;
-        };
-
-        // For primes p ≡ 3 (mod 4), we can use the formula: sqrt(n) = n^((p+1)/4) mod p
-        if (p % 4 == 3) {
-            let exp = (p + 1) / 4;
-            return modPow(n, exp, p);
-        };
-
-        // Otherwise, use Tonelli-Shanks algorithm for p ≡ 1 (mod 4)
-
-        // Factor p-1 as q * 2^s where q is odd
-        var q : Nat = p - 1;
-        var s = 0;
-        while (q % 2 == 0) {
-            q := q / 2;
-            s += 1;
-        };
-
-        // Find a quadratic non-residue z
-        var z = 2;
-        while (modPow(z, (p - 1) / 2, p) != (p - 1 : Nat)) {
-            z += 1;
-        };
-
-        // Initialize algorithm variables
-        var m = s;
-        var c = modPow(z, q, p);
-        var t = modPow(n, q, p);
-        var r = modPow(n, (q + 1) / 2, p);
-
-        // Main loop
-        while (t != 1) {
-            // Find the least i, 0 < i < m, such that t^(2^i) ≡ 1 (mod p)
-            var i = 1;
-            var squared = (t * t) % p;
-            while (i < m and squared != 1) {
-                squared := (squared * squared) % p;
-                i += 1;
+            let a_reduced : Nat = a % m;
+            if (Nat.equal(a_reduced, 0)) {
+                // Inverse of 0 doesn't exist unless modulus is 1 (which is disallowed)
+                Runtime.trap("modInv: Inverse does not exist (a is congruent to 0 mod m)");
             };
 
-            if (i == m) {
-                // No solution exists
-                return 0;
+            // Use implicit Nat <: Int subtyping for conversion
+            let a_int : Int = a_reduced;
+            let m_int : Int = m;
+
+            // Call the helper function that works with Ints
+            let (gcd, x, y) = _extendedEuclideanAlgorithm(a_int, m_int);
+
+            // Check if inverse exists. Since b (m_int) is positive, gcd returned by
+            // the new base case (b, 0, 1) will be positive.
+            // We need gcd to be 1 for the inverse to exist.
+            if (gcd != 1) {
+                Runtime.trap("modInv: Inverse does not exist (a and m are not coprime, gcd=" # debug_show (gcd) # ")");
             };
 
-            // Calculate b = c^(2^(m-i-1)) mod p
-            let exp = Nat.pow(2, Int.abs(m - i - 1));
-            let b = modPow(c, exp, p);
+            // The inverse is x. We need to map it to the range [0, m-1].
+            let result_int : Int = (x % m_int + m_int) % m_int;
 
-            // Update variables for next iteration
-            m := i;
-            c := (b * b) % p;
-            t := (t * b * b) % p;
-            r := (r * b) % p;
+            assert (result_int >= 0);
+            return Int.abs(result_int); // Convert back to Nat
         };
 
-        return r;
-    };
+        /**
+     * Extended Euclidean Algorithm helper function.
+     * Uses alternative base case.
+     */
+        private func _extendedEuclideanAlgorithm(a : Int, b : Int) : (Int, Int, Int) {
+            // Debug.print("_extendedEuclideanAlgorithm(a=" # debug_show(a) # ", b=" # debug_show(b) # ")"); // Optional: uncomment for deep trace
 
-    private func modPow(base : Nat, exp : Nat, modulus : Nat) : Nat {
-        var result = 1;
-        var b = base % modulus;
-        var e = exp;
-
-        while (e > 0) {
-            if (e % 2 == 1) {
-                result := (result * b) % modulus;
+            // MODIFIED: Use alternative standard base case: gcd(0, b) = b, x = 0, y = 1
+            if (a == 0) {
+                // Since b (modulus m) is positive in modInv, gcd returned (b) will be positive.
+                return (b, 0, 1);
             };
-            e := e / 2;
-            b := (b * b) % modulus;
-        };
 
-        result;
+            // Recursive step (standard algorithm)
+            let q : Int = b / a;
+            let r : Int = b % a; // Motoko's remainder
+
+            let (gcd, x1, y1) = _extendedEuclideanAlgorithm(r, a);
+
+            // Calculate x and y using results from recursive call
+            let x = y1 - q * x1;
+            let y = x1;
+
+            return (gcd, x, y);
+        };
     };
 };

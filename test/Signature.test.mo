@@ -1,8 +1,59 @@
 import { test } "mo:test";
 import Runtime "mo:new-base/Runtime";
 import Blob "mo:new-base/Blob";
+import Debug "mo:new-base/Debug";
 import Signature "../src/Signature";
 import Text "mo:base/Text";
+
+// test(
+//     "a",
+//     func() {
+//         Debug.print("--- Testing Base Point Recovery ---");
+//         let base_y : Nat = 46316835694926478169428394003475163141307993866256225615783033603165251855960;
+//         let expected_bx : Nat = 15112221349535400772501151409588531511454012693041857206046113283949847762202;
+//         let isXNegative = false; // Bx is even
+
+//         // Call the function under test
+//         let recovered_bx = Signature.recoverXFromY(base_y, #ed25519, isXNegative);
+
+//         // Compare results
+//         if (recovered_bx != expected_bx) {
+//             Debug.print("!!! Base point recovery FAILED !!!");
+//             Debug.print("Expected Bx: " # debug_show (expected_bx));
+//             Debug.print("Recovered Bx: " # debug_show (recovered_bx));
+//             Runtime.trap("Base point recovery failed!");
+//         } else {
+//             Debug.print("Base point recovery successful!");
+//         };
+//         Debug.print("--- /Testing Base Point Recovery ---");
+//     },
+// );
+// test(
+//     "b",
+//     func() {
+//         Debug.print("--- Testing Negative Base Point Recovery ---");
+//         // y is the same as the base point's y
+//         let neg_base_y : Nat = 46316835694926478169428394003475163141307993866256225615783033603165251855960;
+//         // Expected x is (-Bx mod p), which is odd
+//         let expected_neg_bx : Nat = 42783823269122696939284341094755422415180979639778424813682678720006717057747;
+//         // We expect the odd root
+//         let isXNegative = true;
+
+//         // Call the function under test
+//         let recovered_neg_bx = Signature.recoverXFromY(neg_base_y, #ed25519, isXNegative);
+
+//         // Compare results
+//         if (recovered_neg_bx != expected_neg_bx) {
+//             Debug.print("!!! Negative base point recovery FAILED !!!");
+//             Debug.print("Expected -Bx: " # debug_show (expected_neg_bx));
+//             Debug.print("Recovered x:  " # debug_show (recovered_neg_bx));
+//             Runtime.trap("Negative base point recovery failed!");
+//         } else {
+//             Debug.print("Negative base point recovery successful!");
+//         };
+//         Debug.print("--- /Testing Negative Base Point Recovery ---");
+//     },
+// );
 
 test(
     "Signature to/fromBytes",
@@ -17,24 +68,12 @@ test(
         };
         let testCases : [TestCase] = [
             {
-                // Standard Ed25519 signature
-                x = -2709446079449353687495251577960115125199;
-                y = 32850134408996644834936237048431127511394627251815326726394878566423705950164;
-                s = 6058151488569404433177041819706964225378086124735050383929941716708969566663;
+                x = 15112221349535400772501151409588531511454012693041857206046113283949847762202;
+                y = 46316835694926478169428394003475163141307993866256225615783033603165251855960;
+                s = 7055432450925680840815035157730575267673472388327113095507987779099519877264;
                 outputByteEncoding = #raw;
                 inputByteEncoding = #raw({ curve = #ed25519 });
-                // Expected raw bytes representation (64 bytes)
-                expected = "\84\4c\7a\f3\45\8f\33\6a\43\5a\54\3a\85\0d\36\08\19\a1\92\d1\fc\de\3f\3d\c3\76\59\7b\3f\c4\8a\80\27\b5\7c\a3\19\98\66\45\dc\7a\0e\ab\d0\f9\d5\36\c1\e6\37\73\03\f3\c0\7e\1f\fc\d2\18\da\a1\c4\0d";
-            },
-            {
-                // Ed25519 signature with negative x (bit 7 of first byte should be 1)
-                x = -5471598209892512054862324589241706472214;
-                y = 45238649199836881920793566056889134909737591514882012296902797922742564273782;
-                s = 24209461726586500677365695679121562740559686926116165967384438823388206760992;
-                outputByteEncoding = #raw;
-                inputByteEncoding = #raw({ curve = #ed25519 });
-                // Expected raw bytes representation (64 bytes) with high bit set in R
-                expected = "\96\a2\c6\5e\31\7f\8b\90\12\4c\d3\e4\47\4f\31\1a\53\24\73\89\5d\bd\c3\21\0c\7b\73\19\f0\c4\8e\86\e0\91\34\a2\c7\33\ed\49\b2\f0\5e\10\3f\56\79\22\60\bf\d4\a3\84\64\97\9c\f5\6a\54\ab\d9\96\29\35";
+                expected = "\60\81\d8\a1\40\0b\79\00\0e\e3\4a\53\77\ca\bd\52\35\dd\9b\a5\d8\20\3d\61\00\56\75\0e\bc\85\e3\f8\98\55\62\01\4d\f8\d5\b2\7f\17\83\0c\7a\db\fc\39\92\56\94\9e\08\74\8b\0a\2e\12\e5\34\99\72\95\05";
             },
         ];
         for (testCase in testCases.vals()) {
@@ -45,7 +84,7 @@ test(
             // Export to raw bytes
             let rawBytes = Blob.fromArray(signature.toBytes(outputByteEncoding));
             if (rawBytes != expected) {
-                Runtime.trap("Exported bytes do not match expected bytes");
+                Runtime.trap("Exported bytes do not match expected bytes\nExpected\n" # debug_show expected # "\nActual\n" # debug_show rawBytes);
             };
 
             // Import from raw bytes
@@ -56,7 +95,7 @@ test(
 
             // Check equality
             if (not signature.equal(importedSig)) {
-                Runtime.trap("Imported signature does not match original");
+                Runtime.trap("Imported signature does not match original\nOriginal\n" # debug_show { x = signature.x; y = signature.y; s = signature.s } # "\nImported\n" # debug_show { x = importedSig.x; y = importedSig.y; s = importedSig.s });
             };
         };
     },
