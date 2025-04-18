@@ -22,7 +22,7 @@ module {
 
                 let y_squared = NatUtils.modPow(y, 2, p);
 
-                let numerator = (y_squared + p - 1) % p;
+                let numerator = (y_squared + p - 1) : Nat % p;
 
                 let dy_squared = Nat.mul(d, y_squared) % p;
                 let denominator = (1 + dy_squared) % p;
@@ -60,7 +60,7 @@ module {
                 let final_x : Nat = if (isXNegative == is_root1_negative) {
                     x_root1;
                 } else {
-                    assert (((p - x_root1) % 2 == 1) != is_root1_negative);
+                    assert (((p - x_root1) : Nat % 2 == 1) != is_root1_negative);
                     (p - x_root1) % p;
                 };
 
@@ -102,7 +102,7 @@ module {
             let a_int : Int = a_reduced;
             let m_int : Int = m;
 
-            let (gcd, x, y) = _extendedEuclideanAlgorithm(a_int, m_int);
+            let (gcd, x, _) = _extendedEuclideanAlgorithm(a_int, m_int);
 
             if (gcd != 1) {
                 Runtime.trap("modInv: Inverse does not exist (a and m are not coprime, gcd=" # debug_show (gcd) # ")");

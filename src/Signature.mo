@@ -6,9 +6,6 @@ import Result "mo:base/Result";
 import BaseX "mo:base-x-encoder";
 import NatX "mo:xtended-numbers/NatX";
 import Int "mo:new-base/Int";
-import Debug "mo:new-base/Debug";
-import Runtime "mo:new-base/Runtime";
-import Blob "mo:new-base/Blob";
 import IterTools "mo:itertools/Iter";
 import Common "Common";
 

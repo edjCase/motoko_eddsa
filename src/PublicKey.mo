@@ -3,11 +3,8 @@ import Nat8 "mo:base/Nat8";
 import Iter "mo:base/Iter";
 import Result "mo:base/Result";
 import Buffer "mo:base/Buffer";
-import Array "mo:base/Array";
 import ASN1 "mo:asn1";
 import Text "mo:new-base/Text";
-import Nat32 "mo:new-base/Nat32";
-import Debug "mo:new-base/Debug";
 import Signature "./Signature";
 import BaseX "mo:base-x-encoder";
 import PeekableIter "mo:itertools/PeekableIter";
@@ -81,7 +78,6 @@ module {
             msg : Iter.Iter<Nat8>,
             signature : Signature.Signature,
         ) : Bool {
-            Debug.print("Verifying signature with public key: " # debug_show { x = x; y = y; curve = curve });
             // Convert message iterator to array
             let buffer = Buffer.Buffer<Nat8>(128);
             for (byte in msg) {
@@ -89,12 +85,9 @@ module {
             };
             let msgArray = Buffer.toArray(buffer);
 
-            Debug.print("Message bytes: " # debug_show msgArray);
             // Get signature bytes
             let sigBytes = signature.toBytes(#raw);
-            Debug.print("Signature bytes: " # debug_show sigBytes);
             let bytes = toBytes(#raw);
-            Debug.print("Public key bytes: " # debug_show bytes);
 
             // Use TweetNaCl for verification
             NACL.SIGN.DETACHED.verify(msgArray, sigBytes, bytes);

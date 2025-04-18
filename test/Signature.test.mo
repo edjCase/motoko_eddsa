@@ -1,59 +1,8 @@
 import { test } "mo:test";
 import Runtime "mo:new-base/Runtime";
 import Blob "mo:new-base/Blob";
-import Debug "mo:new-base/Debug";
 import Signature "../src/Signature";
 import Text "mo:base/Text";
-
-// test(
-//     "a",
-//     func() {
-//         Debug.print("--- Testing Base Point Recovery ---");
-//         let base_y : Nat = 46316835694926478169428394003475163141307993866256225615783033603165251855960;
-//         let expected_bx : Nat = 15112221349535400772501151409588531511454012693041857206046113283949847762202;
-//         let isXNegative = false; // Bx is even
-
-//         // Call the function under test
-//         let recovered_bx = Signature.recoverXFromY(base_y, #ed25519, isXNegative);
-
-//         // Compare results
-//         if (recovered_bx != expected_bx) {
-//             Debug.print("!!! Base point recovery FAILED !!!");
-//             Debug.print("Expected Bx: " # debug_show (expected_bx));
-//             Debug.print("Recovered Bx: " # debug_show (recovered_bx));
-//             Runtime.trap("Base point recovery failed!");
-//         } else {
-//             Debug.print("Base point recovery successful!");
-//         };
-//         Debug.print("--- /Testing Base Point Recovery ---");
-//     },
-// );
-// test(
-//     "b",
-//     func() {
-//         Debug.print("--- Testing Negative Base Point Recovery ---");
-//         // y is the same as the base point's y
-//         let neg_base_y : Nat = 46316835694926478169428394003475163141307993866256225615783033603165251855960;
-//         // Expected x is (-Bx mod p), which is odd
-//         let expected_neg_bx : Nat = 42783823269122696939284341094755422415180979639778424813682678720006717057747;
-//         // We expect the odd root
-//         let isXNegative = true;
-
-//         // Call the function under test
-//         let recovered_neg_bx = Signature.recoverXFromY(neg_base_y, #ed25519, isXNegative);
-
-//         // Compare results
-//         if (recovered_neg_bx != expected_neg_bx) {
-//             Debug.print("!!! Negative base point recovery FAILED !!!");
-//             Debug.print("Expected -Bx: " # debug_show (expected_neg_bx));
-//             Debug.print("Recovered x:  " # debug_show (recovered_neg_bx));
-//             Runtime.trap("Negative base point recovery failed!");
-//         } else {
-//             Debug.print("Negative base point recovery successful!");
-//         };
-//         Debug.print("--- /Testing Negative Base Point Recovery ---");
-//     },
-// );
 
 test(
     "Signature to/fromBytes",
@@ -92,7 +41,6 @@ test(
                 case (#ok(sig)) sig;
                 case (#err(e)) Runtime.trap("Failed to import signature: " # e);
             };
-            // Debug.print("Imported signature: " # debug_show { x = importedSig.x; y = importedSig.y; s = importedSig.s });
 
             // Check equality
             if (not signature.equal(importedSig)) {
