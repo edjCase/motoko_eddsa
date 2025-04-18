@@ -9,7 +9,7 @@ module {
 
     // Create a public key from raw bytes
     public func PublicKey(
-        x : Int,
+        x : Nat,
         y : Nat,
         curveKind : PublicKeyModule.CurveKind,
     ) : PublicKey = PublicKeyModule.PublicKey(x, y, curveKind);
