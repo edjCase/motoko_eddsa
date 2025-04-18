@@ -7,7 +7,20 @@ module {
     public type PublicKey = PublicKeyModule.PublicKey;
     public type Signature = SignatureModule.Signature;
 
-    // Create a public key from raw bytes
+    // Re-export types for convenient access
+    public type PublicKeyInputByteEncoding = PublicKeyModule.InputByteEncoding;
+    public type PublicKeyOutputByteEncoding = PublicKeyModule.OutputByteEncoding;
+    public type PublicKeyInputTextFormat = PublicKeyModule.InputTextFormat;
+    public type PublicKeyOutputTextFormat = PublicKeyModule.OutputTextFormat;
+
+    public type SignatureInputByteEncoding = SignatureModule.InputByteEncoding;
+    public type SignatureOutputByteEncoding = SignatureModule.OutputByteEncoding;
+    public type SignatureInputTextFormat = SignatureModule.InputTextFormat;
+    public type SignatureOutputTextFormat = SignatureModule.OutputTextFormat;
+
+    public type CurveKind = PublicKeyModule.CurveKind;
+
+    // Create a public key from raw coordinates
     public func PublicKey(
         x : Nat,
         y : Nat,
@@ -26,7 +39,7 @@ module {
         encoding : PublicKeyModule.InputTextFormat,
     ) : Result.Result<PublicKey, Text> = PublicKeyModule.fromText(text, encoding);
 
-    // Create a signature from raw bytes
+    // Create a signature from raw values
     public func Signature(
         x : Int,
         y : Nat,

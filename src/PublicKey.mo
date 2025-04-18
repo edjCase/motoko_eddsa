@@ -17,9 +17,7 @@ import Common "Common";
 module {
     public type HashAlgorithm = Sha256.Algorithm;
 
-    public type CurveKind = {
-        #ed25519;
-    };
+    public type CurveKind = Common.CurveKind;
 
     // The OID for Ed25519 (1.3.101.112)
     private let ED25519_OID : [Nat] = [1, 3, 101, 112];
@@ -118,19 +116,23 @@ module {
                     };
                 };
                 case (#spki) {
-                    let bytes = toBytes(#raw);
-                    // Create ASN.1 structure for SPKI
-                    let spki : ASN1.ASN1Value = #sequence([
-                        #sequence([
-                            #objectIdentifier(ED25519_OID),
-                        ]),
-                        #bitString({
-                            data = bytes;
-                            unusedBits = 0;
-                        }),
-                    ]);
+                    switch (curve) {
+                        case (#ed25519) {
+                            let bytes = toBytes(#raw);
+                            // Create ASN.1 structure for SPKI
+                            let spki : ASN1.ASN1Value = #sequence([
+                                #sequence([
+                                    #objectIdentifier(ED25519_OID),
+                                ]),
+                                #bitString({
+                                    data = bytes;
+                                    unusedBits = 0;
+                                }),
+                            ]);
 
-                    ASN1.encodeDER(spki);
+                            ASN1.encodeDER(spki);
+                        };
+                    };
                 };
             };
         };
