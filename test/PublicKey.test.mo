@@ -9,23 +9,21 @@ test(
   "verify public key",
   func() {
     type TestCase = {
-      x : Int;
+      x : Nat;
       y : Nat;
       curve : PublicKey.CurveKind;
       message : Blob;
       signature : Signature.Signature;
     };
     let testCases : [TestCase] = [{
-      // Example Ed25519 key pair
-      x = 15112221349535400772501151409588531511454012693041857206046113283949847762202;
-      y = 46316835694926478169428394003475163141307993866256225615783033603165251855960;
+      x = 51286398080436808364751719791652616808950448576822237245355328773964350987914;
+      y = 43512393995653313780034091491436412746798652980930200433568831129039272735465;
       curve = #ed25519;
       // Simple test message "Hello"
       message = "\48\65\6c\6c\6f";
-      // Corresponding signature for the message
       signature = Signature.Signature(
-        15112221349535400772501151409588531511454012693041857206046113283949847762202,
-        46316835694926478169428394003475163141307993866256225615783033603165251855960,
+        32659244743902125671750775541108600435972519608980791545566174304356588384442,
+        37812647512915033038667227002500228956020200491405235946433044056539611995827,
         7055432450925680840815035157730575267673472388327113095507987779099519877264,
       );
     }];
@@ -48,7 +46,7 @@ test(
   "PublicKey to/fromBytes (raw)",
   func() {
     type TestCase = {
-      x : Int;
+      x : Nat;
       y : Nat;
       curve : PublicKey.CurveKind;
       outputByteEncoding : PublicKey.OutputByteEncoding;
@@ -57,13 +55,11 @@ test(
     };
     let testCases : [TestCase] = [
       {
-        // Standard Ed25519 key
-        x = 0; // Positive x (bit 7 of first byte should be 0)
-        y = 0;
+        x = 51286398080436808364751719791652616808950448576822237245355328773964350987914;
+        y = 43512393995653313780034091491436412746798652980930200433568831129039272735465;
         curve = #ed25519;
         outputByteEncoding = #raw;
         inputByteEncoding = #raw({ curve = #ed25519 });
-        // Expected raw bytes representation (32 bytes)
         expected = "\e9\f2\dc\b6\bb\fb\9f\bd\41\d9\84\49\02\65\cb\62\49\18\c3\b0\eb\16\b1\b3\0c\fe\ea\65\6a\24\33\60";
       },
     ];
@@ -86,7 +82,7 @@ test(
 
       // Check equality
       if (not publicKey.equal(importedKey)) {
-        Runtime.trap("Imported key does not match original key for test case:\n" # debug_show (testCase));
+        Runtime.trap("Imported key does not match original key for test case:\nTestCase\n" # debug_show (testCase) # "\nOriginal\n" # debug_show { x = publicKey.x; y = publicKey.y } # "\nImported\n" # debug_show { x = importedKey.x; y = importedKey.y });
       };
     };
   },
@@ -96,7 +92,7 @@ test(
   "PublicKey to/fromText (formats)",
   func() {
     type TestCase = {
-      x : Int;
+      x : Nat;
       y : Nat;
       curve : PublicKey.CurveKind;
       outputTextFormat : PublicKey.OutputTextFormat;
@@ -106,8 +102,8 @@ test(
     let testCases : [TestCase] = [
       // Test hex encoding
       {
-        x = 0;
-        y = 0;
+        x = 51286398080436808364751719791652616808950448576822237245355328773964350987914;
+        y = 43512393995653313780034091491436412746798652980930200433568831129039272735465;
         curve = #ed25519;
         outputTextFormat = #hex({
           byteEncoding = #raw;
