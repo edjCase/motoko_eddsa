@@ -121,7 +121,7 @@ test(
                 });
                 outputFormat = #base64({
                     byteEncoding = #der;
-                    isUriSafe = false;
+                    format = #standard({ includePadding = true });
                 });
                 expected = "MEQCIFOZMzdJa6NSxwc0eZ2u9UNbEeL01TL54QP7IhXX/x6zAiAPmTu2bWWbLlJl45nZyFAvEHZ5zvE9FFxp4g7PENwAkA==";
             },

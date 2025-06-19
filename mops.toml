@@ -1,18 +1,21 @@
-[dependencies]
-base = "0.14.7"
-new-base = "0.4.0"
-base-x-encoder = "0.0.1"
-asn1 = "2.0.2"
-sha2 = "0.1.0"
-tweetnacl = "1.1.1"
-
 [package]
 name = "eddsa"
-version = "0.0.1"
+version = "1.0.0"
 description = "A library for EdDSA public keys/signatures in Motoko"
 repository = "https://github.com/edjcase/motoko_eddsa"
 keywords = []
 license = "MIT"
 
+[dependencies]
+base = "0.14.13"
+new-base = "0.4.0"
+base-x-encoder = "1.1.0"
+asn1 = "2.0.2"
+sha2 = "0.1.4"
+tweetnacl = "1.1.1"
+
 [dev-dependencies]
 test = "2.1.1"
+
+[toolchain]
+moc = "0.14.10"

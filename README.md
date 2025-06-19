@@ -149,7 +149,7 @@ let spkiPemKey = publicKey.toText(#pem({
 
 let base64Key = publicKey.toText(#base64({
   byteEncoding = #raw;
-  isUriSafe = true;
+  format = #url({ includePadding = false });
 }));
 
 let jwkKey = publicKey.toText(#jwk);
@@ -165,7 +165,7 @@ let rawHexSig = signature.toText(#hex({
 
 let derBase64Sig = signature.toText(#base64({
   byteEncoding = #der;
-  isUriSafe = false;
+  format = #standard({ includePadding = true });
 }));
 
 let pemSig = signature.toText(#pem({
@@ -282,7 +282,7 @@ public type InputTextFormat = {
 };
 
 public type OutputTextFormat = {
-    #base64 : { byteEncoding : OutputByteEncoding; isUriSafe : Bool };
+    #base64 : { byteEncoding : OutputByteEncoding; format : BaseX.Base64OutputFormat };
     #hex : { byteEncoding : OutputByteEncoding; format : BaseX.HexOutputFormat };
     #pem : { byteEncoding : OutputByteEncoding };
     #jwk;

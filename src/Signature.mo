@@ -30,7 +30,7 @@ module {
     public type OutputTextFormat = {
         #base64 : {
             byteEncoding : OutputByteEncoding;
-            isUriSafe : Bool;
+            format : BaseX.Base64OutputFormat;
         };
         #hex : {
             byteEncoding : OutputByteEncoding;
@@ -130,7 +130,7 @@ module {
                 };
                 case (#base64(base64)) {
                     let bytes = toBytes(base64.byteEncoding);
-                    BaseX.toBase64(bytes.vals(), base64.isUriSafe);
+                    BaseX.toBase64(bytes.vals(), base64.format);
                 };
             };
         };

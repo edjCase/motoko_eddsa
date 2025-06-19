@@ -97,7 +97,7 @@ test(
         curve = #ed25519;
         outputTextFormat = #base64({
           byteEncoding = #raw;
-          isUriSafe = false;
+          format = #standard({ includePadding = true });
         });
         inputTextFormat = ?#base64({
           byteEncoding = #raw({ curve = #ed25519 });
@@ -111,7 +111,7 @@ test(
         curve = #ed25519;
         outputTextFormat = #base64({
           byteEncoding = #raw;
-          isUriSafe = true;
+          format = #url({ includePadding = false });
         });
         inputTextFormat = ?#base64({
           byteEncoding = #raw({ curve = #ed25519 });

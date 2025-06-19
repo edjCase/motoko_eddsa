@@ -37,7 +37,7 @@ module {
     public type OutputTextFormat = {
         #base64 : {
             byteEncoding : OutputByteEncoding;
-            isUriSafe : Bool;
+            format : BaseX.Base64OutputFormat;
         };
         #hex : {
             byteEncoding : OutputByteEncoding;
@@ -145,7 +145,7 @@ module {
                 };
                 case (#base64(base64)) {
                     let bytes = toBytes(base64.byteEncoding);
-                    BaseX.toBase64(bytes.vals(), base64.isUriSafe);
+                    BaseX.toBase64(bytes.vals(), base64.format);
                 };
                 case (#pem({ byteEncoding })) {
                     let bytes = toBytes(byteEncoding);
@@ -153,7 +153,7 @@ module {
                         case (#spki) ("PUBLIC");
                         case (#raw) ("ED25519 PUBLIC");
                     };
-                    let base64 = BaseX.toBase64(bytes.vals(), false);
+                    let base64 = BaseX.toBase64(bytes.vals(), #standard({ includePadding = true }));
 
                     let iter = PeekableIter.fromIter(base64.chars());
                     var formatted = Text.fromIter(IterTools.take(iter, 64));
@@ -166,7 +166,7 @@ module {
                 case (#jwk) {
                     // JWK format for Ed25519
                     let bytes = toBytes(#raw);
-                    let xb64 = BaseX.toBase64(bytes.vals(), true); // URI-safe Base64
+                    let xb64 = BaseX.toBase64(bytes.vals(), #url({ includePadding = false })); // URI-safe Base64
 
                     // Format as JWK JSON for OKP (Octet Key Pair) with Ed25519 curve
                     "{\"kty\":\"OKP\",\"crv\":\"Ed25519\",\"x\":\"" # xb64 # "\"}";
