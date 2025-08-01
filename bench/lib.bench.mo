@@ -1,10 +1,10 @@
 import Bench "mo:bench";
-import Nat "mo:base/Nat";
-import Iter "mo:base/Iter";
-import Result "mo:base/Result";
-import Debug "mo:base/Debug";
-import Blob "mo:base/Blob";
-import Runtime "mo:new-base/Runtime";
+import Nat "mo:core/Nat";
+import Iter "mo:core/Iter";
+import Result "mo:core/Result";
+import Debug "mo:core/Debug";
+import Blob "mo:core/Blob";
+import Runtime "mo:core/Runtime";
 import EdDSA "../src";
 
 module {

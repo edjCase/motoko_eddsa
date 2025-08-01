@@ -24,7 +24,7 @@ To set up the MOPS package manager, follow the instructions from the
 
 ```motoko
 import EdDSA "mo:eddsa";
-import Iter "mo:base/Iter";
+import Iter "mo:core/Iter";
 
 // Message to verify
 let message : [Nat8] = [/* message bytes */];
