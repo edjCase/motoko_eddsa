@@ -1,8 +1,6 @@
 import Bench "mo:bench";
 import Nat "mo:core/Nat";
-import Iter "mo:core/Iter";
 import Result "mo:core/Result";
-import Debug "mo:core/Debug";
 import Blob "mo:core/Blob";
 import Runtime "mo:core/Runtime";
 import EdDSA "../src";
