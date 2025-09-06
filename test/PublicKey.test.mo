@@ -1,8 +1,8 @@
 import { test } "mo:test";
-import Runtime "mo:core/Runtime";
-import Blob "mo:core/Blob";
+import Runtime "mo:core@1/Runtime";
+import Blob "mo:core@1/Blob";
 import PublicKey "../src/PublicKey";
-import Text "mo:core/Text";
+import Text "mo:core@1/Text";
 import Signature "../src/Signature";
 
 test(

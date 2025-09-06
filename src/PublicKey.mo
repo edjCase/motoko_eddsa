@@ -1,19 +1,19 @@
-import Nat "mo:core/Nat";
-import Nat8 "mo:core/Nat8";
-import Iter "mo:core/Iter";
-import Result "mo:core/Result";
-import Buffer "mo:buffer";
-import ASN1 "mo:asn1";
-import Text "mo:core/Text";
+import Nat "mo:core@1/Nat";
+import Nat8 "mo:core@1/Nat8";
+import Iter "mo:core@1/Iter";
+import Result "mo:core@1/Result";
+import Buffer "mo:buffer@0";
+import ASN1 "mo:asn1@3";
+import Text "mo:core@1/Text";
 import Signature "./Signature";
-import BaseX "mo:base-x-encoder";
-import PeekableIter "mo:xtended-iter/PeekableIter";
-import NACL "mo:tweetnacl";
-import Sha256 "mo:sha2/Sha256";
-import NatX "mo:xtended-numbers/NatX";
+import BaseX "mo:base-x-encoder@2";
+import PeekableIter "mo:xtended-iter@1/PeekableIter";
+import NACL "mo:tweetnacl@1";
+import Sha256 "mo:sha2@0/Sha256";
+import NatX "mo:xtended-numbers@2/NatX";
 import Common "Common";
-import Array "mo:core/Array";
-import List "mo:core/List";
+import Array "mo:core@1/Array";
+import List "mo:core@1/List";
 
 module {
   public type HashAlgorithm = Sha256.Algorithm;
@@ -103,10 +103,10 @@ module {
               };
               let final_byte_31 : Nat8 = if (x % 2 == 1) {
                 // Odd x: SET the MSB
-                List.get(list, 31) | 0x80;
+                List.at(list, 31) | 0x80;
               } else {
                 // Even x: CLEAR the MSB
-                List.get(list, 31) & 0x7F;
+                List.at(list, 31) & 0x7F;
               };
               List.put(list, 31, final_byte_31);
               List.toArray(list);
@@ -177,10 +177,10 @@ module {
     switch (encoding) {
       case (#raw({ curve })) {
         let rBytes = bytes |> Iter.take(_, 32) |> List.fromIter<Nat8>(_);
-        let isXNegative = List.get(rBytes, 31) & 0x80 == 0x80;
+        let isXNegative = List.at(rBytes, 31) & 0x80 == 0x80;
         if (isXNegative) {
           // Clear the sign bit for negative x
-          List.put(rBytes, 31, List.get(rBytes, 31) & 0x7F);
+          List.put(rBytes, 31, List.at(rBytes, 31) & 0x7F);
         };
         let ?y = NatX.fromNatBytes(List.values(rBytes), #lsb) else return #err("Invalid signature bytes, unable to decode R");
         let x : Nat = Common.recoverXFromY(y, curve, isXNegative);

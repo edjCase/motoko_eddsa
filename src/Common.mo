@@ -1,6 +1,6 @@
-import Nat "mo:core/Nat";
-import Runtime "mo:core/Runtime";
-import Int "mo:core/Int";
+import Nat "mo:core@1/Nat";
+import Runtime "mo:core@1/Runtime";
+import Int "mo:core@1/Int";
 module {
 
   public type CurveKind = {

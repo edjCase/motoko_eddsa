@@ -1,7 +1,7 @@
 import PublicKeyModule "./PublicKey";
 import SignatureModule "./Signature";
-import Iter "mo:core/Iter";
-import Result "mo:core/Result";
+import Iter "mo:core@1/Iter";
+import Result "mo:core@1/Result";
 
 module {
   public type PublicKey = PublicKeyModule.PublicKey;
